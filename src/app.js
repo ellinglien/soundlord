@@ -24,6 +24,13 @@ function reassignKeys() {
   state.pads.forEach((pad, i) => { pad.key = keyForIndex(i); });
 }
 
+function durationFor(pad) {
+  if (pad.end == null) return undefined;
+  const start = pad.start ?? 0;
+  const d = pad.end - start;
+  return d > 0 ? d : undefined;
+}
+
 function render() {
   renderBoard(root, state, handlers);
 }
@@ -36,6 +43,7 @@ const handlers = {
         volume: pad.volume,
         mode: pad.mode,
         offset: pad.start ?? 0,
+        duration: durationFor(pad),
       });
     }
   },
@@ -70,6 +78,26 @@ const handlers = {
     const next = parseFloat(input);
     if (!Number.isFinite(next) || next < 0) return;
     pad.start = next;
+    if (storageAvailable()) savePad(pad);
+    render();
+  },
+  onSetEnd(id) {
+    const pad = state.pads.find((p) => p.id === id);
+    if (!pad) return;
+    const current = pad.end == null ? "" : pad.end.toFixed(2);
+    const input = window.prompt(
+      "End sample at (seconds; blank = full length):",
+      current
+    );
+    if (input === null) return;
+    const trimmed = input.trim();
+    if (trimmed === "") {
+      pad.end = null;
+    } else {
+      const next = parseFloat(trimmed);
+      if (!Number.isFinite(next) || next <= 0) return;
+      pad.end = next;
+    }
     if (storageAvailable()) savePad(pad);
     render();
   },
@@ -111,6 +139,7 @@ async function addFiles(fileList) {
         key: "",
         order: state.pads.length,
         start: 0,
+        end: null,
       };
       state.pads.push(pad);
       reassignKeys();
@@ -152,6 +181,7 @@ window.addEventListener("keydown", (e) => {
       volume: pad.volume,
       mode: pad.mode,
       offset: pad.start ?? 0,
+      duration: durationFor(pad),
     });
   }
 });

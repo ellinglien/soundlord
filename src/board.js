@@ -35,7 +35,7 @@ export function renderBoard(root, state, handlers) {
   });
 
   root.appendChild(line(""));
-  const help = line("  click name area or its number key to fire  ·  right-click name to rename  ·  click a vol cell to set level  ·  click (mode) to cycle overlap → restart → toggle  ·  click start to skip leading silence");
+  const help = line("  click name area or its number key to fire  ·  right-click name to rename  ·  click a vol cell to set level  ·  click (mode) to cycle overlap → restart → toggle  ·  click start/end to trim (blank = full)");
   help.className = "notice";
   root.appendChild(help);
 }
@@ -77,6 +77,14 @@ function padLine(pad, index, handlers) {
   start.className = "mode clickable";
   start.addEventListener("click", () => handlers.onSetStart(pad.id));
   row.appendChild(start);
+
+  row.appendChild(span("  "));
+
+  const endLabel = pad.end == null ? "end —" : `end ${pad.end.toFixed(2)}s`;
+  const end = span(endLabel);
+  end.className = "mode clickable";
+  end.addEventListener("click", () => handlers.onSetEnd(pad.id));
+  row.appendChild(end);
 
   row.appendChild(span("  "));
 

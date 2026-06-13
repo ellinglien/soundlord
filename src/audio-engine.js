@@ -25,7 +25,7 @@ export class AudioEngine {
     return await this.ctx.decodeAudioData(arrayBuffer);
   }
 
-  play(padId, buffer, { volume = 1, mode = "overlap", offset = 0 } = {}) {
+  play(padId, buffer, { volume = 1, mode = "overlap", offset = 0, duration } = {}) {
     this._ensure();
     if (mode === "toggle") {
       const existing = this.active.get(padId);
@@ -47,7 +47,12 @@ export class AudioEngine {
     const set = this.active.get(padId);
     set.add(src);
     src.onended = () => set.delete(src);
-    src.start(0, Math.max(0, offset));
+    const safeOffset = Math.max(0, offset);
+    if (duration != null && duration > 0) {
+      src.start(0, safeOffset, duration);
+    } else {
+      src.start(0, safeOffset);
+    }
     return src;
   }
 

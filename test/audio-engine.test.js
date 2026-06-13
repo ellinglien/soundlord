@@ -18,8 +18,9 @@ function makeFakeContext() {
         buffer: null,
         onended: null,
         connect() {},
-        start(when, offset) {
+        start(when, offset, duration) {
           node.startedAt = offset ?? 0;
+          node.duration = duration;
           started.push(node);
         },
         stop() { stopped.push(node); },
@@ -120,6 +121,21 @@ test("play clamps negative offset to 0", () => {
   const engine = new AudioEngine(() => ctx);
   engine.play("p", { duration: 5 }, { mode: "overlap", offset: -1 });
   assert.equal(ctx._started[0].startedAt, 0);
+});
+
+test("play forwards duration when provided (trim end)", () => {
+  const ctx = makeFakeContext();
+  const engine = new AudioEngine(() => ctx);
+  engine.play("p", { duration: 5 }, { mode: "overlap", offset: 0.5, duration: 2 });
+  assert.equal(ctx._started[0].startedAt, 0.5);
+  assert.equal(ctx._started[0].duration, 2);
+});
+
+test("play omits duration when not provided (play to end)", () => {
+  const ctx = makeFakeContext();
+  const engine = new AudioEngine(() => ctx);
+  engine.play("p", { duration: 5 }, { mode: "overlap", offset: 0 });
+  assert.equal(ctx._started[0].duration, undefined);
 });
 
 test("toggle mode: starts when idle, stops when playing, restarts after stop", () => {
