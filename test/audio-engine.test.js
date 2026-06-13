@@ -69,3 +69,38 @@ test("stopAll stops sources across all pads", () => {
   assert.equal(engine.active.get("bell").size, 0);
   assert.equal(ctx._stopped.length, 3);
 });
+
+function makeGainTrackingContext() {
+  const gains = [];
+  return {
+    state: "running",
+    destination: { id: "destination" },
+    resume() {},
+    createGain() {
+      const node = { gain: { value: 1 }, connect() {} };
+      gains.push(node);
+      return node;
+    },
+    createBufferSource() {
+      return { buffer: null, onended: null, connect() {}, start() {}, stop() {} };
+    },
+    _gains: gains,
+  };
+}
+
+test("play applies per-pad volume to a dedicated gain node", () => {
+  const ctx = makeGainTrackingContext();
+  const engine = new AudioEngine(() => ctx);
+  // first gain created is the master gain in _ensure()
+  engine.play("p", { duration: 1 }, { volume: 0.25, mode: "overlap" });
+  const padGain = ctx._gains[ctx._gains.length - 1];
+  assert.equal(padGain.gain.value, 0.25);
+});
+
+test("setMasterVolume sets the master gain", () => {
+  const ctx = makeGainTrackingContext();
+  const engine = new AudioEngine(() => ctx);
+  engine.setMasterVolume(0.7);
+  // master gain is the first gain node created
+  assert.equal(ctx._gains[0].gain.value, 0.7);
+});
