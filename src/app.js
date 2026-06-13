@@ -21,7 +21,21 @@ function padNum(id) {
 }
 
 function reassignKeys() {
-  state.pads.forEach((pad, i) => { pad.key = keyForIndex(i); });
+  const taken = new Set(state.pads.filter((p) => p.userKey && p.key).map((p) => p.key));
+  let cursor = 0;
+  for (const pad of state.pads) {
+    if (pad.userKey && pad.key) continue;
+    let candidate = keyForIndex(cursor);
+    while (candidate && taken.has(candidate)) {
+      cursor++;
+      candidate = keyForIndex(cursor);
+    }
+    pad.key = candidate;
+    if (candidate) {
+      taken.add(candidate);
+      cursor++;
+    }
+  }
 }
 
 function durationFor(pad) {
@@ -81,6 +95,33 @@ const handlers = {
     if (storageAvailable()) savePad(pad);
     render();
   },
+  onSetKey(id) {
+    const pad = state.pads.find((p) => p.id === id);
+    if (!pad) return;
+    const input = window.prompt(
+      "Assign a key (single character; blank = auto):",
+      pad.userKey ? pad.key : ""
+    );
+    if (input === null) return;
+    const k = input.trim().toLowerCase();
+    if (k === "") {
+      pad.userKey = false;
+      pad.key = "";
+    } else {
+      if (k.length !== 1) return;
+      const conflict = state.pads.find((p) => p.id !== id && p.key === k);
+      if (conflict) {
+        // bump the conflicting pad off its key — it'll get auto-reassigned
+        conflict.userKey = false;
+        conflict.key = "";
+      }
+      pad.key = k;
+      pad.userKey = true;
+    }
+    reassignKeys();
+    if (storageAvailable()) state.pads.forEach((p) => savePad(p));
+    render();
+  },
   onSetEnd(id) {
     const pad = state.pads.find((p) => p.id === id);
     if (!pad) return;
@@ -137,6 +178,7 @@ async function addFiles(fileList) {
         volume: 0.8,
         mode: "overlap",
         key: "",
+        userKey: false,
         order: state.pads.length,
         start: 0,
         end: null,

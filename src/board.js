@@ -35,7 +35,7 @@ export function renderBoard(root, state, handlers) {
   });
 
   root.appendChild(line(""));
-  const help = line("  click name area or its number key to fire  ·  right-click name to rename  ·  click a vol cell to set level  ·  click (mode) to cycle overlap → restart → toggle  ·  click start/end to trim (blank = full)");
+  const help = line("  click [N] or name to fire (or press the key)  ·  right-click [N] to assign a key  ·  right-click name to rename  ·  click vol cell to set level  ·  click (mode) to cycle  ·  click start/end to trim");
   help.className = "notice";
   root.appendChild(help);
 }
@@ -44,14 +44,26 @@ function padLine(pad, index, handlers) {
   const key = pad.key || keyForIndex(index);
   const row = document.createElement("div");
 
-  const trigger = span(`[${key}]  ${(pad.name.toUpperCase() + " ").padEnd(24, ".")}`);
-  trigger.className = "trigger clickable";
-  trigger.addEventListener("click", () => handlers.onTrigger(pad.id));
-  trigger.addEventListener("contextmenu", (e) => {
+  const keyCell = span(`[${key}]`);
+  keyCell.className = "trigger clickable";
+  if (pad.userKey) keyCell.classList.add("active");
+  keyCell.title = "click to fire · right-click to assign key";
+  keyCell.addEventListener("click", () => handlers.onTrigger(pad.id));
+  keyCell.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    handlers.onSetKey(pad.id);
+  });
+  row.appendChild(keyCell);
+
+  const nameCell = span(`  ${(pad.name.toUpperCase() + " ").padEnd(24, ".")}`);
+  nameCell.className = "trigger clickable";
+  nameCell.title = "click to fire · right-click to rename";
+  nameCell.addEventListener("click", () => handlers.onTrigger(pad.id));
+  nameCell.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     handlers.onRename(pad.id);
   });
-  row.appendChild(trigger);
+  row.appendChild(nameCell);
 
   row.appendChild(span(" vol ["));
 

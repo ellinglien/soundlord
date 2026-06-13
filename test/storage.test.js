@@ -12,6 +12,7 @@ test("toRecord keeps persistable fields and drops the decoded buffer", () => {
     volume: 0.8,
     mode: "overlap",
     key: "1",
+    userKey: true,
     order: 0,
     start: 0.5,
     end: 1.25,
@@ -24,6 +25,7 @@ test("toRecord keeps persistable fields and drops the decoded buffer", () => {
     volume: 0.8,
     mode: "overlap",
     key: "1",
+    userKey: true,
     order: 0,
     start: 0.5,
     end: 1.25,
@@ -47,9 +49,10 @@ test("fromRecord returns a pad with a null buffer to be decoded later", () => {
   assert.equal(pad.buffer, null);
 });
 
-test("fromRecord defaults missing start/end (old records)", () => {
+test("fromRecord defaults missing start/end/userKey (old records)", () => {
   const record = { id: "x", name: "Old", blob: {}, volume: 1, mode: "overlap", key: "1", order: 0 };
   const pad = fromRecord(record);
   assert.equal(pad.start, 0);
   assert.equal(pad.end, null);
+  assert.equal(pad.userKey, false);
 });
