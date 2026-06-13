@@ -1,0 +1,19 @@
+:root { color-scheme: dark; }
+body {
+  background: #000;
+  color: #cfcfcf;
+  font-family: "Menlo", "DejaVu Sans Mono", monospace;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 16px;
+}
+#app { margin: 0; white-space: pre; }
+.clickable { cursor: pointer; }
+.trigger:hover { color: #fff; background: #222; }
+.cell { cursor: pointer; }
+.cell:hover { color: #fff; }
+.mode:hover, .remove:hover, .ctrl:hover { color: #fff; background: #222; }
+.active { color: #fff; }
+.notice { color: #888; }
+.error { color: #d66; }
