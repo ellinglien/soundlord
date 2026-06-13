@@ -53,3 +53,19 @@ test("restart mode stops prior sources before starting a new one", () => {
   assert.equal(ctx._started.length, 2);
   assert.equal(ctx._stopped.length, 1);
 });
+
+test("stopAll stops sources across all pads", () => {
+  const ctx = makeFakeContext();
+  const engine = new AudioEngine(() => ctx);
+  const buffer = { duration: 1 };
+
+  engine.play("horn", buffer, { mode: "overlap" });
+  engine.play("horn", buffer, { mode: "overlap" });
+  engine.play("bell", buffer, { mode: "overlap" });
+
+  engine.stopAll();
+
+  assert.equal(engine.active.get("horn").size, 0);
+  assert.equal(engine.active.get("bell").size, 0);
+  assert.equal(ctx._stopped.length, 3);
+});
