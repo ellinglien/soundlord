@@ -40,3 +40,16 @@ test("overlap mode keeps every triggered source active", () => {
   assert.equal(ctx._started.length, 2);
   assert.equal(ctx._stopped.length, 0);
 });
+
+test("restart mode stops prior sources before starting a new one", () => {
+  const ctx = makeFakeContext();
+  const engine = new AudioEngine(() => ctx);
+  const buffer = { duration: 1 };
+
+  engine.play("bell", buffer, { mode: "restart" });
+  engine.play("bell", buffer, { mode: "restart" });
+
+  assert.equal(engine.active.get("bell").size, 1);
+  assert.equal(ctx._started.length, 2);
+  assert.equal(ctx._stopped.length, 1);
+});
