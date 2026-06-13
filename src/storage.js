@@ -7,6 +7,7 @@ export function toRecord(pad) {
     mode: pad.mode,
     key: pad.key,
     order: pad.order,
+    start: pad.start ?? 0,
   };
 }
 
@@ -20,6 +21,7 @@ export function fromRecord(record) {
     mode: record.mode,
     key: record.key,
     order: record.order,
+    start: record.start ?? 0,
   };
 }
 

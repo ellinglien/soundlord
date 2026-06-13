@@ -18,7 +18,10 @@ function makeFakeContext() {
         buffer: null,
         onended: null,
         connect() {},
-        start() { started.push(node); },
+        start(when, offset) {
+          node.startedAt = offset ?? 0;
+          started.push(node);
+        },
         stop() { stopped.push(node); },
       };
       return node;
@@ -103,4 +106,37 @@ test("setMasterVolume sets the master gain", () => {
   engine.setMasterVolume(0.7);
   // master gain is the first gain node created
   assert.equal(ctx._gains[0].gain.value, 0.7);
+});
+
+test("play forwards offset to source.start", () => {
+  const ctx = makeFakeContext();
+  const engine = new AudioEngine(() => ctx);
+  engine.play("p", { duration: 5 }, { mode: "overlap", offset: 0.25 });
+  assert.equal(ctx._started[0].startedAt, 0.25);
+});
+
+test("play clamps negative offset to 0", () => {
+  const ctx = makeFakeContext();
+  const engine = new AudioEngine(() => ctx);
+  engine.play("p", { duration: 5 }, { mode: "overlap", offset: -1 });
+  assert.equal(ctx._started[0].startedAt, 0);
+});
+
+test("toggle mode: starts when idle, stops when playing, restarts after stop", () => {
+  const ctx = makeFakeContext();
+  const engine = new AudioEngine(() => ctx);
+  const buffer = { duration: 1 };
+
+  engine.play("p", buffer, { mode: "toggle" }); // start
+  assert.equal(engine.active.get("p").size, 1);
+  assert.equal(ctx._started.length, 1);
+
+  engine.play("p", buffer, { mode: "toggle" }); // stop
+  assert.equal(engine.active.get("p").size, 0);
+  assert.equal(ctx._stopped.length, 1);
+  assert.equal(ctx._started.length, 1); // no new start
+
+  engine.play("p", buffer, { mode: "toggle" }); // start again
+  assert.equal(engine.active.get("p").size, 1);
+  assert.equal(ctx._started.length, 2);
 });

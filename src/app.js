@@ -32,7 +32,11 @@ const handlers = {
   onTrigger(id) {
     const pad = state.pads.find((p) => p.id === id);
     if (pad && pad.buffer) {
-      engine.play(pad.id, pad.buffer, { volume: pad.volume, mode: pad.mode });
+      engine.play(pad.id, pad.buffer, {
+        volume: pad.volume,
+        mode: pad.mode,
+        offset: pad.start ?? 0,
+      });
     }
   },
   onStopAll() { engine.stopAll(); },
@@ -52,7 +56,20 @@ const handlers = {
   onToggleMode(id) {
     const pad = state.pads.find((p) => p.id === id);
     if (!pad) return;
-    pad.mode = pad.mode === "overlap" ? "restart" : "overlap";
+    const next = { overlap: "restart", restart: "toggle", toggle: "overlap" };
+    pad.mode = next[pad.mode] || "overlap";
+    if (storageAvailable()) savePad(pad);
+    render();
+  },
+  onSetStart(id) {
+    const pad = state.pads.find((p) => p.id === id);
+    if (!pad) return;
+    const current = (pad.start ?? 0).toFixed(2);
+    const input = window.prompt("Start sample at (seconds, e.g. 0.25):", current);
+    if (input === null) return;
+    const next = parseFloat(input);
+    if (!Number.isFinite(next) || next < 0) return;
+    pad.start = next;
     if (storageAvailable()) savePad(pad);
     render();
   },
@@ -93,6 +110,7 @@ async function addFiles(fileList) {
         mode: "overlap",
         key: "",
         order: state.pads.length,
+        start: 0,
       };
       state.pads.push(pad);
       reassignKeys();
@@ -130,7 +148,11 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { engine.stopAll(); return; }
   const pad = state.pads.find((p) => p.key === e.key.toLowerCase());
   if (pad && pad.buffer) {
-    engine.play(pad.id, pad.buffer, { volume: pad.volume, mode: pad.mode });
+    engine.play(pad.id, pad.buffer, {
+      volume: pad.volume,
+      mode: pad.mode,
+      offset: pad.start ?? 0,
+    });
   }
 });
 

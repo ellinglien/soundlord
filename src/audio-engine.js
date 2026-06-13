@@ -25,8 +25,15 @@ export class AudioEngine {
     return await this.ctx.decodeAudioData(arrayBuffer);
   }
 
-  play(padId, buffer, { volume = 1, mode = "overlap" } = {}) {
+  play(padId, buffer, { volume = 1, mode = "overlap", offset = 0 } = {}) {
     this._ensure();
+    if (mode === "toggle") {
+      const existing = this.active.get(padId);
+      if (existing && existing.size > 0) {
+        this.stopPad(padId);
+        return null;
+      }
+    }
     if (mode === "restart") this.stopPad(padId);
 
     const src = this.ctx.createBufferSource();
@@ -40,7 +47,7 @@ export class AudioEngine {
     const set = this.active.get(padId);
     set.add(src);
     src.onended = () => set.delete(src);
-    src.start(0);
+    src.start(0, Math.max(0, offset));
     return src;
   }
 

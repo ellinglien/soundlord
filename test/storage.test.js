@@ -13,6 +13,7 @@ test("toRecord keeps persistable fields and drops the decoded buffer", () => {
     mode: "overlap",
     key: "1",
     order: 0,
+    start: 0.5,
   };
   const record = toRecord(pad);
   assert.deepEqual(record, {
@@ -23,13 +24,14 @@ test("toRecord keeps persistable fields and drops the decoded buffer", () => {
     mode: "overlap",
     key: "1",
     order: 0,
+    start: 0.5,
   });
   assert.equal("buffer" in record, false);
 });
 
 test("fromRecord returns a pad with a null buffer to be decoded later", () => {
   const blob = { fake: "blob" };
-  const record = { id: "abc", name: "Bell", blob, volume: 0.6, mode: "restart", key: "2", order: 1 };
+  const record = { id: "abc", name: "Bell", blob, volume: 0.6, mode: "restart", key: "2", order: 1, start: 0.25 };
   const pad = fromRecord(record);
   assert.equal(pad.id, "abc");
   assert.equal(pad.name, "Bell");
@@ -38,5 +40,12 @@ test("fromRecord returns a pad with a null buffer to be decoded later", () => {
   assert.equal(pad.mode, "restart");
   assert.equal(pad.key, "2");
   assert.equal(pad.order, 1);
+  assert.equal(pad.start, 0.25);
   assert.equal(pad.buffer, null);
+});
+
+test("fromRecord defaults missing start to 0 (old records)", () => {
+  const record = { id: "x", name: "Old", blob: {}, volume: 1, mode: "overlap", key: "1", order: 0 };
+  const pad = fromRecord(record);
+  assert.equal(pad.start, 0);
 });
