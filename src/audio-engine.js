@@ -4,6 +4,28 @@ export class AudioEngine {
     this.ctx = null;
     this.masterGain = null;
     this.active = new Map(); // padId -> Set<sourceNode>
+    this._lastActive = new Map(); // padId -> boolean
+    this.onActiveChange = null; // (padId, isActive) => void
+  }
+
+  _emitState(padId) {
+    const set = this.active.get(padId);
+    const isActive = !!(set && set.size > 0);
+    const was = this._lastActive.get(padId) ?? false;
+    if (isActive !== was) {
+      this._lastActive.set(padId, isActive);
+      if (this.onActiveChange) this.onActiveChange(padId, isActive);
+    }
+  }
+
+  _stopSilent(padId) {
+    const set = this.active.get(padId);
+    if (!set) return;
+    for (const src of set) {
+      src.onended = null;
+      try { src.stop(0); } catch (e) { /* already stopped */ }
+    }
+    set.clear();
   }
 
   _ensure() {
@@ -34,7 +56,7 @@ export class AudioEngine {
         return null;
       }
     }
-    if (mode === "restart") this.stopPad(padId);
+    if (mode === "restart") this._stopSilent(padId);
 
     const src = this.ctx.createBufferSource();
     src.buffer = buffer;
@@ -46,23 +68,23 @@ export class AudioEngine {
     if (!this.active.has(padId)) this.active.set(padId, new Set());
     const set = this.active.get(padId);
     set.add(src);
-    src.onended = () => set.delete(src);
+    src.onended = () => {
+      set.delete(src);
+      this._emitState(padId);
+    };
     const safeOffset = Math.max(0, offset);
     if (duration != null && duration > 0) {
       src.start(0, safeOffset, duration);
     } else {
       src.start(0, safeOffset);
     }
+    this._emitState(padId);
     return src;
   }
 
   stopPad(padId) {
-    const set = this.active.get(padId);
-    if (!set) return;
-    for (const src of set) {
-      try { src.stop(0); } catch (e) { /* already stopped */ }
-    }
-    set.clear();
+    this._stopSilent(padId);
+    this._emitState(padId);
   }
 
   stopAll() {

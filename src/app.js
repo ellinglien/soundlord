@@ -8,6 +8,10 @@ import { keyForIndex } from "./format.js";
 const root = document.getElementById("app");
 const fileInput = document.getElementById("file-input");
 const engine = new AudioEngine();
+engine.onActiveChange = (padId, isActive) => {
+  const row = root.querySelector(`[data-pad-id="${padId}"]`);
+  if (row) row.classList.toggle("playing", isActive);
+};
 
 let state = { pads: [], settings: { masterVolume: 0.8 } };
 

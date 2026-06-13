@@ -17,3 +17,9 @@ body {
 .active { color: #fff; }
 .notice { color: #888; }
 .error { color: #d66; }
+
+@keyframes playing-pulse {
+  0%, 100% { color: #cfcfcf; }
+  50% { color: #ffd866; }
+}
+.playing { animation: playing-pulse 0.9s ease-in-out infinite; }

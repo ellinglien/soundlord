@@ -43,6 +43,7 @@ export function renderBoard(root, state, handlers) {
 function padLine(pad, index, handlers) {
   const key = pad.key || keyForIndex(index);
   const row = document.createElement("div");
+  row.dataset.padId = pad.id;
 
   const keyCell = span(`[${key}]`);
   keyCell.className = "trigger clickable";

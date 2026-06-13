@@ -138,6 +138,42 @@ test("play omits duration when not provided (play to end)", () => {
   assert.equal(ctx._started[0].duration, undefined);
 });
 
+test("onActiveChange fires once on start and once when all sources end", () => {
+  const ctx = makeFakeContext();
+  const engine = new AudioEngine(() => ctx);
+  const events = [];
+  engine.onActiveChange = (id, active) => events.push([id, active]);
+  const buffer = { duration: 1 };
+
+  engine.play("p", buffer, { mode: "overlap" });
+  engine.play("p", buffer, { mode: "overlap" }); // second source — no new event
+  assert.deepEqual(events, [["p", true]]);
+
+  // simulate one source ending
+  const sources = [...engine.active.get("p")];
+  sources[0].onended();
+  // still one source left, no event
+  assert.deepEqual(events, [["p", true]]);
+
+  // last one ends
+  sources[1].onended();
+  assert.deepEqual(events, [["p", true], ["p", false]]);
+});
+
+test("restart mode does not emit a false→true blip", () => {
+  const ctx = makeFakeContext();
+  const engine = new AudioEngine(() => ctx);
+  const events = [];
+  engine.onActiveChange = (id, active) => events.push([id, active]);
+
+  engine.play("p", { duration: 1 }, { mode: "restart" });
+  engine.play("p", { duration: 1 }, { mode: "restart" });
+  engine.play("p", { duration: 1 }, { mode: "restart" });
+
+  // Only one transition to true; never a false in between.
+  assert.deepEqual(events, [["p", true]]);
+});
+
 test("toggle mode: starts when idle, stops when playing, restarts after stop", () => {
   const ctx = makeFakeContext();
   const engine = new AudioEngine(() => ctx);
